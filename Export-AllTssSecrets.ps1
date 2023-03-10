@@ -112,7 +112,6 @@ if ($ButtonClicked -eq [Selection]::Cancel) {
         Write-Host "$(Get-Date -Format G): Found $($Folders.Count) folders."
         $Folders
         # Loop through folders and get secrets and passwords
-        $Secrets = @()
         foreach ($Folder in $Folders) {
             # Check if sessions is within three minutes of timeout
             if ($Session.CheckTokenTtl(5)) {
