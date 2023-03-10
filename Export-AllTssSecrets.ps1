@@ -6,6 +6,7 @@
 # Secret Folder Path, Secret Name, Secret Password
 
 $ErrorActionPreference = 'Stop'
+$CsvPath = "$PSScriptRoot\secrets.csv"
 
 # Button Values
 enum Buttons {
@@ -96,6 +97,11 @@ while (($null -eq $Session) -and ($ButtonClicked -ne [Selection]::Cancel)) {
     }
 }
 
+# Delete CSV file if it exists
+if (Test-Path $CsvPath -PathType Leaf) {
+    Remove-Item $CsvPath -Force
+}
+
 if ($ButtonClicked -eq [Selection]::Cancel) {
     if ($Session) { $null = Close-TssSession -TssSession $Session }
 } else {
@@ -112,28 +118,27 @@ if ($ButtonClicked -eq [Selection]::Cancel) {
             if ($Session.CheckTokenTtl(5)) {
                 Write-TssLog @logInfoParam -Message 'Token nearing expiration, attempting to renew'
                 try {
-                    $null = $Session.SessionRefresh()
-                } catch {
-                    Write-TssLog @logInfoParam -Message 'Token renewal failed, attempting to create new session'
                     $null = Close-TssSession -TssSession $Session
                     $Session = New-TssSession -SecretServer $Settings.ssUri -Credential $ThycoticCreds `
                         -ErrorAction $ErrorActionPreference
+                } catch {
+                    Write-TssLog @logInfoParam -Message 'Token renewal failed, exiting script.'
+                    break
                 }
-                Write-TssLog @logInfoParam -Message "Token renewal successful. Token Time of Death: $($Session.TimeOfDeath)"
+                Write-TssLog @logInfoParam -Message "Token renewal successful. New token Time of Death: $($Session.TimeOfDeath)"
             }
             Write-Host "$(Get-Date -Format G): Getting secrets from $($Folder.FolderPath)."
             $FolderSecrets = Search-TssSecret -TssSession $Session -FolderId $Folder.FolderId -IncludeInactive
-            $Secrets += $FolderSecrets | Select-Object SecretName, Active, @{Name = 'FolderPath'; Expression = {
+            $FolderSecrets | Select-Object SecretName, Active, @{Name = 'FolderPath'; Expression = {
                     $Folder.FolderPath }
             }, SecretTemplateName, @{Name = 'SecretPassword'; Expression = {
                          (Get-TssSecret -TssSession $Session -Id $_.SecretId).GetFieldValue('Password') }
 
-            }
+            } | Export-Csv -Path $CsvPath -NoTypeInformation -Append
             Write-Host "$(Get-Date -Format G): Found $($FolderSecrets.Count) secrets in $($Folder.FolderPath)."
         }
 
-        Write-Host "$(Get-Date -Format G): Found $($Secrets.Count) secrets with passwords. Exporting to CSV."
-        $Secrets | Export-Csv -Path "$PSScriptRoot\secrets.csv" -NoTypeInformation
+        Write-Host "$(Get-Date -Format G): Found $($Secrets.Count) secrets with passwords"
     } catch {
         Write-Error $_.Exception.Message
     } finally {
