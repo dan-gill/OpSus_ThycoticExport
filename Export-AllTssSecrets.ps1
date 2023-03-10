@@ -70,7 +70,7 @@ $ThycoticCreds = $null
 $Session = $null
 [Selection]$ButtonClicked = [Selection]::None
 $logInfoParam = @{
-    LogFilePath = "$PSScriptRoot\logs\Export-AllTssSecrets.log"
+    LogFilePath = "$PSScriptRoot/logs/Export-AllTssSecrets.log"
 }
 
 while (($null -eq $Session) -and ($ButtonClicked -ne [Selection]::Cancel)) {
@@ -107,8 +107,8 @@ if ($ButtonClicked -eq [Selection]::Cancel) {
         # Loop through folders and get secrets and passwords
         $Secrets = @()
         foreach ($Folder in $Folders) {
-            # Check if sessions is nearing timeout
-            if ($Session.CheckTokenTtl(3)) {
+            # Check if sessions is within three minutes of timeout
+            if ($Session.ExpiresIn -lt 180) {
                 Write-TssLog @logInfoParam -Message 'Token nearing expiration, attempting to renew'
                 try {
                     $null = $Session.SessionRefresh()
@@ -118,7 +118,7 @@ if ($ButtonClicked -eq [Selection]::Cancel) {
                     $Session = New-TssSession -SecretServer $Settings.ssUri -Credential $ThycoticCreds `
                         -ErrorAction $ErrorActionPreference
                 }
-                Write-TssLog @logInfoParam -Message 'Token renewal successful'
+                Write-TssLog @logInfoParam -Message "Token renewal successful. Token Time of Death: $($Session.TimeOfDeath)"
             }
             Write-Host "$(Get-Date -Format G): Getting secrets from $($Folder.FolderPath)."
             $FolderSecrets = Search-TssSecret -TssSession $Session -FolderId $Folder.FolderId -IncludeInactive
