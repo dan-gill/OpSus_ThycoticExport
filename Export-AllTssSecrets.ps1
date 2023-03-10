@@ -85,6 +85,7 @@ while (($null -eq $Session) -and ($ButtonClicked -ne [Selection]::Cancel)) {
             # Create session on TSS
             $Session = New-TssSession -SecretServer $Settings.ssUri -Credential $ThycoticCreds `
                 -ErrorAction $ErrorActionPreference
+            Write-TssLog @logInfoParam -Message "Token Time of Death: $($Session.TimeOfDeath)"
         } catch {
             $wshell = New-Object -ComObject Wscript.Shell
             $ButtonClicked = $wshell.Popup("Login to $($Settings.ssUri) failed. Retry?", 0, 'Failed login', `
