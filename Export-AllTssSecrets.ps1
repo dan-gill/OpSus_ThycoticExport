@@ -109,7 +109,7 @@ if ($ButtonClicked -eq [Selection]::Cancel) {
         $Secrets = @()
         foreach ($Folder in $Folders) {
             # Check if sessions is within three minutes of timeout
-            if ($Session.ExpiresIn -lt 180) {
+            if ($Session.CheckTokenTtl(5)) {
                 Write-TssLog @logInfoParam -Message 'Token nearing expiration, attempting to renew'
                 try {
                     $null = $Session.SessionRefresh()
