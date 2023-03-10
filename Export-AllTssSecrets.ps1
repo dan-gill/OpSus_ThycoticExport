@@ -70,7 +70,7 @@ $ThycoticCreds = $null
 $Session = $null
 [Selection]$ButtonClicked = [Selection]::None
 $logInfoParam = @{
-    LogFilePath = "$PSScriptRoot/logs/Export-AllTssSecrets.log"
+    LogFilePath = "$PSScriptRoot/.settings/Export-AllTssSecrets.log"
 }
 
 while (($null -eq $Session) -and ($ButtonClicked -ne [Selection]::Cancel)) {
