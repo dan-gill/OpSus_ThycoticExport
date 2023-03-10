@@ -110,8 +110,14 @@ if ($ButtonClicked -eq [Selection]::Cancel) {
         # Get all folders
         $Folders = Search-TssFolder -TssSession $Session
         Write-Host "$(Get-Date -Format G): Found $($Folders.Count) folders."
-        $Folders
         # Loop through folders and get secrets and passwords
+        $WritePrgressParams = @{
+            Activity        = 'Exporting secrets'
+            Status          = 'Exporting secrets'
+            PercentComplete = 0
+        }
+        Write-Progress @WritePrgressParams
+        $index = 0
         foreach ($Folder in $Folders) {
             # Check if sessions is within three minutes of timeout
             if ($Session.CheckTokenTtl(5)) {
@@ -134,9 +140,15 @@ if ($ButtonClicked -eq [Selection]::Cancel) {
                          (Get-TssSecret -TssSession $Session -Id $_.SecretId).GetFieldValue('Password') }
 
             } | Export-Csv -Path $CsvPath -NoTypeInformation -Append
-            Write-Host "$(Get-Date -Format G): Found $($FolderSecrets.Count) secrets in $($Folder.FolderPath)."
+            $index++
+            $WritePrgressParams = @{
+                Activity        = 'Exporting secrets'
+                Status          = "$(Get-Date -Format G): Found $($FolderSecrets.Count) secrets in $($Folder.FolderPath)."
+                PercentComplete = [Math]::Round(($index / $Folders.Count) * 100, 0)
+            }
+            Write-Progress @WritePrgressParams
         }
-
+        Write-Progress @WritePrgressParams -Completed
         Write-Host "$(Get-Date -Format G): Found $($Secrets.Count) secrets with passwords"
     } catch {
         Write-Error $_.Exception.Message
