@@ -149,7 +149,6 @@ if ($ButtonClicked -eq [Selection]::Cancel) {
             Write-Progress @WriteProgressParams
         }
         Write-Progress @WriteProgressParams -Completed
-        Write-Host "$(Get-Date -Format G): Found $($Secrets.Count) secrets with passwords"
     } catch {
         Write-Error $_.Exception.Message
     } finally {
